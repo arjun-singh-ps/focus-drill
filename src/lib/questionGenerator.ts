@@ -27,15 +27,19 @@ const QUESTION_SCHEMA = {
     choices: {
       type: "array",
       items: { type: "string" },
-      minItems: 4,
-      maxItems: 4,
+      // Claude's structured-outputs schema support only accepts minItems/maxItems
+      // of 0 or 1 on an array — an exact count like 4 is rejected as a 400 at
+      // request time. "Exactly four" is enforced instead by parseAndValidate()
+      // below, which throws on anything other than four non-empty, non-duplicate
+      // choices.
       description: "Exactly four answer options, without A/B/C/D labels.",
     },
     correctIndex: {
       type: "integer",
-      minimum: 0,
-      maximum: 3,
-      description: "Zero-based index of the correct option in `choices`.",
+      // No minimum/maximum: Claude's structured-outputs schema support rejects
+      // numeric bounds on integers with a 400, same restriction as the array
+      // length bounds above. The 0-3 range is enforced by parseAndValidate().
+      description: "Zero-based index of the correct option in `choices`. Must be 0, 1, 2, or 3.",
     },
     explanation: {
       type: "string",

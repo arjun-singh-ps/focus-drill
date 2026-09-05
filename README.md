@@ -79,16 +79,67 @@ npm run lint
 
 ---
 
-## Deploying to Vercel
+## Deploying to Google Cloud Run
 
-1. Push to a GitHub repo.
-2. Import it at vercel.com — the framework is detected automatically.
-3. Add all five environment variables from `.env.local` under **Settings →
-   Environment Variables**.
-4. Deploy.
+Same 3-stage Dockerfile pattern as `pm-ai-toolkit`, with one difference: none of
+this app's five env vars are baked into the image at build time. Every one of
+them is read server-side at request time (`src/lib/claude.ts`,
+`src/lib/supabase.ts`, `src/lib/session.ts`), never in a `"use client"` file, so
+none needs to be present when Docker builds the image — all five are supplied to
+the running container instead.
 
-`/api/session/start` sets `maxDuration = 300` because warming several Opus
-generations takes longer than Vercel's default function timeout.
+Needs `gcloud` CLI installed and authenticated (`gcloud init`), or run everything
+from **Cloud Shell** (console.cloud.google.com → the `>_` icon), which has
+`gcloud` and Docker preinstalled — no local setup at all.
+
+### One-time setup
+
+```bash
+gcloud config set project YOUR_PROJECT_ID
+
+# Store the four sensitive values in Secret Manager rather than as plain env
+# vars — Cloud Run env vars show up in plaintext in `gcloud run services
+# describe` and revision metadata; secrets don't.
+echo -n "sk-ant-..." | gcloud secrets create focus-drill-anthropic-key --data-file=-
+echo -n "sb_secret_..." | gcloud secrets create focus-drill-supabase-key --data-file=-
+echo -n "your-password" | gcloud secrets create focus-drill-app-password --data-file=-
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" | \
+  gcloud secrets create focus-drill-session-secret --data-file=-
+```
+
+### Deploy
+
+```bash
+gcloud run deploy focus-drill \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --timeout=300 \
+  --set-env-vars NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co \
+  --set-secrets ANTHROPIC_API_KEY=focus-drill-anthropic-key:latest,SUPABASE_SERVICE_ROLE_KEY=focus-drill-supabase-key:latest,APP_PASSWORD=focus-drill-app-password:latest,SESSION_SECRET=focus-drill-session-secret:latest
+```
+
+`--source .` builds via Cloud Build using the `Dockerfile` in this repo — no
+separate push step needed. `--allow-unauthenticated` is required since this
+app's own password gate (`src/proxy.ts`) is the access control, not Google's IAM;
+without it, Google's own auth layer would sit in front of the login page nobody
+but her needs to see. `--timeout=300` matches the value already set as
+`maxDuration` in `src/app/api/session/start/route.ts` for the (harmless, inert
+outside Vercel) case this code ever runs there again — Cloud Run's own default is
+already 300s, so this flag is really just making that explicit.
+
+To update after a code change, re-run the same `gcloud run deploy` command — it
+rebuilds and rolls out a new revision. Rotate a secret with
+`echo -n "new-value" | gcloud secrets versions add focus-drill-anthropic-key --data-file=-`
+then redeploy so the new revision picks up `:latest`.
+
+### Cost note
+
+Cloud Run scales to zero when idle by default (`--min-instances=0`, the
+default), so there's no charge between practice sessions — the tradeoff is a few
+seconds of cold-start latency on the first request after a period of inactivity.
+Add `--min-instances=1` if that cold start ever bothers her, at the cost of the
+container running continuously.
 
 ---
 

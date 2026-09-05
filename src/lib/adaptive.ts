@@ -240,3 +240,18 @@ export function topWeightedSubskills(
 export function emptyStat(subskillKey: string): SubskillStat {
   return { subskillKey, correctCount: 0, totalCount: 0, lastAttemptedAt: null };
 }
+
+/**
+ * True when every enabled subskill has zero attempts.
+ *
+ * At true cold start every subskill's selectionWeight is identical (no accuracy
+ * data to differentiate them), so "the top N by weight" is really just an
+ * arbitrary N-of-many — the real draw in pickSubskill is uniform across all of
+ * them. Pre-warming only the top few in that state still leaves most draws
+ * missing the bank. This predicate lets the caller warm broadly exactly once,
+ * before any real signal exists, then fall back to the narrower top-N warm for
+ * every session after the first attempt is logged.
+ */
+export function isColdStart(stats: readonly SubskillStat[]): boolean {
+  return stats.every((stat) => stat.totalCount === 0);
+}

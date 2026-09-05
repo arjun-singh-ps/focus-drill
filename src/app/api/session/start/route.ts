@@ -6,6 +6,8 @@
 
 import { NextResponse } from "next/server";
 import {
+  COLD_START_TARGET_DEPTH,
+  isColdStart,
   loadSelectionContext,
   warmCells,
   WARM_TARGET_DEPTH,
@@ -13,7 +15,13 @@ import {
 import { topUpBank } from "@/lib/questionBank";
 import { getRateLimitStatus } from "@/lib/rateLimit";
 
-/** Vercel's default function timeout is short; warming several questions needs longer. */
+/**
+ * Only takes effect if this ever runs on Vercel again — Next.js ignores route
+ * config a deployment target doesn't support, so it's harmless here. On Cloud
+ * Run the equivalent is the service's own request timeout, set at deploy time
+ * with `gcloud run deploy --timeout=300` (see README) — Cloud Run's default is
+ * already 300s, matching this value.
+ */
 export const maxDuration = 300;
 
 export async function POST() {
@@ -27,8 +35,18 @@ export async function POST() {
       );
     }
 
-    const cells = await warmCells(context);
-    const { added, rateLimited } = await topUpBank(cells, WARM_TARGET_DEPTH);
+    // At true cold start every subskill is tied (no accuracy data yet), so the
+    // real draw in pickSubskill is effectively uniform across all of them —
+    // warming only the top few would still miss most first-questions. Warm the
+    // whole enabled rotation once, shallowly; every session after the first
+    // logged attempt reverts to the narrower, deeper top-N warm below.
+    const cold = isColdStart(context.stats);
+    const cells = cold
+      ? await warmCells(context, context.stats.length)
+      : await warmCells(context);
+    const targetDepth = cold ? COLD_START_TARGET_DEPTH : WARM_TARGET_DEPTH;
+
+    const { added, rateLimited } = await topUpBank(cells, targetDepth);
     const rateLimit = await getRateLimitStatus();
 
     return NextResponse.json({

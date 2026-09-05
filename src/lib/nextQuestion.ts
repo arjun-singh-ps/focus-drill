@@ -6,6 +6,7 @@
 
 import {
   DIFFICULTY_WINDOW,
+  isColdStart,
   pickDifficulty,
   pickSubskill,
   topWeightedSubskills,
@@ -32,11 +33,22 @@ export interface Cell {
   difficulty: Difficulty;
 }
 
-/** How many cells ahead the bank is kept warm. */
+/** How many cells ahead the bank is kept warm, once real accuracy data exists. */
 export const WARM_CELL_COUNT = 3;
 
-/** Target unserved questions per warm cell. */
+/** Target unserved questions per warm cell, for the routine per-question top-up. */
 export const WARM_TARGET_DEPTH = 2;
+
+/**
+ * Depth used for the one-time full-rotation warm at true cold start (see
+ * isColdStart). Lower than WARM_TARGET_DEPTH and spread over every enabled
+ * subskill rather than just the top few, so the first session's opening
+ * question is never the one waiting on cost and latency of covering everything
+ * twice over.
+ */
+export const COLD_START_TARGET_DEPTH = 1;
+
+export { isColdStart };
 
 /** Everything the caller needs to pick and serve, loaded in one go. */
 export interface SelectionContext {
@@ -74,9 +86,17 @@ export async function chooseCell(context: SelectionContext): Promise<Cell> {
  *
  * Uses the same weighting as real selection, so the bank is warm exactly where the
  * next draw is most likely to land rather than spread thinly across everything.
+ *
+ * @param count how many subskills to warm — defaults to WARM_CELL_COUNT for the
+ * routine per-question top-up. Callers pass context.stats.length at true cold
+ * start (see isColdStart), when every subskill is tied and "top N" would
+ * otherwise cover only a fraction of what pickSubskill can actually draw next.
  */
-export async function warmCells(context: SelectionContext): Promise<Cell[]> {
-  const keys = topWeightedSubskills(context.stats, new Date(), WARM_CELL_COUNT);
+export async function warmCells(
+  context: SelectionContext,
+  count: number = WARM_CELL_COUNT
+): Promise<Cell[]> {
+  const keys = topWeightedSubskills(context.stats, new Date(), count);
 
   return Promise.all(
     keys.map(async (subskillKey) => {

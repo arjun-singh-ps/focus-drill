@@ -1,8 +1,11 @@
-// Next.js config. Deliberately minimal — unlike pm-ai-toolkit this app deploys to
-// Vercel rather than Cloud Run, so there is no `output: "standalone"` here.
+// Next.js config. `output: "standalone"` produces a self-contained server bundle
+// (.next/standalone) that the Dockerfile copies into the runtime image — the same
+// pattern pm-ai-toolkit uses for its own Cloud Run deploy.
 
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  output: "standalone",
+};
 
 export default nextConfig;

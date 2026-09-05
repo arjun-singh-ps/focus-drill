@@ -1,0 +1,12 @@
+# No --build-arg values here, unlike pm-ai-toolkit's cloudbuild.yaml — every env
+# var this app needs is supplied at Cloud Run deploy time (see README), not baked
+# into the image, since none of them are safe or necessary to bake in.
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - --tag
+      - "gcr.io/$PROJECT_ID/focus-drill"
+      - .
+images:
+  - "gcr.io/$PROJECT_ID/focus-drill"

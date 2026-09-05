@@ -4,7 +4,6 @@
 // the answer key), then tops the bank back up in the background so the NEXT call
 // is instant too.
 
-import { waitUntil } from "@vercel/functions";
 import { NextResponse } from "next/server";
 import {
   chooseCell,
@@ -31,18 +30,19 @@ export async function POST() {
     const cell = await chooseCell(context);
     const banked = await obtainQuestion(cell);
 
-    // Background top-up. waitUntil keeps the serverless function alive past the
-    // response, so she is not waiting on generation she will not use for 90 seconds.
-    waitUntil(
-      warmCells(context)
-        .then((cells) => topUpBank(cells, WARM_TARGET_DEPTH))
-        .catch((error) => {
-          console.error(
-            "Background bank top-up failed:",
-            error instanceof Error ? error.message : error
-          );
-        })
-    );
+    // Background top-up, deliberately not awaited. On Cloud Run the container is
+    // a persistent Node process (unlike a Vercel serverless function, which
+    // terminates right after the response unless something holds it open), so a
+    // plain fire-and-forget promise keeps running to completion on its own — no
+    // platform-specific "keep alive" helper needed.
+    void warmCells(context)
+      .then((cells) => topUpBank(cells, WARM_TARGET_DEPTH))
+      .catch((error) => {
+        console.error(
+          "Background bank top-up failed:",
+          error instanceof Error ? error.message : error
+        );
+      });
 
     return NextResponse.json({
       question: toServedQuestion(banked),

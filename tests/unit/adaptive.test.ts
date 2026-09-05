@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   DIFFICULTY_WINDOW,
   emptyStat,
+  isColdStart,
   pickDifficulty,
   pickSubskill,
   rawAccuracy,
@@ -219,5 +220,29 @@ describe("topWeightedSubskills", () => {
     const stats = [stat("a", 0.9, 10), stat("b", 0.1, 10)];
     topWeightedSubskills(stats, NOW, 2);
     expect(stats[0].subskillKey).toBe("a");
+  });
+});
+
+describe("isColdStart", () => {
+  it("is true when every subskill has zero attempts", () => {
+    expect(isColdStart([emptyStat("a"), emptyStat("b"), emptyStat("c")])).toBe(true);
+  });
+
+  it("is false once even one subskill has an attempt", () => {
+    const stats = [emptyStat("a"), stat("b", 1, 1), emptyStat("c")];
+    expect(isColdStart(stats)).toBe(false);
+  });
+
+  it("is false once every subskill has attempts", () => {
+    const stats = [stat("a", 0.5, 4), stat("b", 0.5, 4)];
+    expect(isColdStart(stats)).toBe(false);
+  });
+
+  it("is vacuously true for an empty list", () => {
+    // Never actually reached in practice — pickSubskill throws on empty stats
+    // before this predicate would matter — but Array.prototype.every on an
+    // empty array is true by definition, and the test documents that on purpose
+    // rather than leaving it as an unconsidered edge case.
+    expect(isColdStart([])).toBe(true);
   });
 });
