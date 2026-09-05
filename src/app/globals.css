@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/*
+ * Focus Drill's design system: paper white, navy ink, amber accent.
+ *
+ * Tokens are plain CSS custom properties (same convention as pm-ai-toolkit), so
+ * components use Tailwind utilities for layout and inline style={{ }} for colour.
+ *
+ * This app deliberately commits to a single light "paper" look rather than
+ * shipping a dark variant — it is meant to feel like a printed test booklet, and
+ * a dark-mode SAT booklet is not a thing.
+ */
+:root {
+  /* Surfaces */
+  --paper: #FDFBF7;
+  --card: #FFFFFF;
+  --rule: #E6E0D4;
+  --rule-soft: #F1ECE2;
+
+  /* Ink */
+  --ink: #1B2A4A;
+  --ink-mid: #47597A;
+  --ink-muted: #8A94A6;
+
+  /* Accent */
+  --amber: #D98A2B;
+  --amber-soft: #FBF1E2;
+
+  /* Answer states */
+  --correct: #2F7D5C;
+  --correct-soft: #E8F2ED;
+  --incorrect: #B3452F;
+  --incorrect-soft: #F8EAE6;
+
+  /* Chart marks. Single-hue by design: every chart here is one series, or an
+     ordered part-to-whole of one measure, so no categorical palette is needed
+     and there is nothing to get wrong under colour-vision deficiency. */
+  --mark: #1B2A4A;
+  --mark-soft: #C3CBD9;
+  --grid: #EDE8DE;
+
+  --shadow-card: 0 1px 2px rgba(27, 42, 74, .04), 0 4px 14px rgba(27, 42, 74, .05);
+  --shadow-lift: 0 2px 4px rgba(27, 42, 74, .06), 0 12px 28px rgba(27, 42, 74, .10);
+}
+
+@theme inline {
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-source-serif);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Question text and passages are set in serif — the digital SAT sets its own
+   reading material in a serif face, and practising in the same register is part
+   of the point. UI chrome stays sans. */
+.question-type {
+  font-family: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.125rem;
+  line-height: 1.65;
+}
+
+.passage-type {
+  font-family: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+/* Axis ticks and table figures align vertically, so they get equal-width digits.
+   Deliberately NOT applied to large standalone stat numbers, where tabular
+   figures make the number look loose. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+/* Respect a reduced-motion preference: the timer ring and feedback transitions
+   are decorative, and a countdown that pulses is exactly the sort of thing that
+   causes trouble for motion-sensitive users. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
