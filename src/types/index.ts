@@ -104,3 +104,40 @@ export interface ProgressData {
     activeDays: number;
   };
 }
+
+/** Which subset of the log /review shows. */
+export type ReviewOutcome = "all" | "correct" | "incorrect";
+
+/** What the client sends /api/review to request one page of results. */
+export interface ReviewFilters {
+  outcome: ReviewOutcome;
+  /** Null means every subskill. */
+  subskillKey: string | null;
+  limit: number;
+  offset: number;
+}
+
+/** One attempted question, in full — the question, what she picked, and the key. */
+export interface ReviewItem {
+  attemptId: string;
+  createdAt: string;
+  subskillKey: string;
+  subskillLabel: string;
+  domainLabel: string;
+  difficulty: Difficulty;
+  wasCorrect: boolean;
+  wasTimedOut: boolean;
+  /** Null only when it timed out with nothing selected. */
+  chosenIndex: number | null;
+  passage?: string;
+  stem: string;
+  choices: [string, string, string, string];
+  correctIndex: 0 | 1 | 2 | 3;
+  explanation: string;
+}
+
+/** One page of /api/review results. */
+export interface ReviewPage {
+  items: ReviewItem[];
+  hasMore: boolean;
+}

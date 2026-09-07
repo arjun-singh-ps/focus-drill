@@ -70,6 +70,7 @@ export async function POST(request: Request) {
       difficulty: question.difficulty as Difficulty,
       wasCorrect,
       wasTimedOut: timedOut,
+      chosenIndex: hasChoice ? (choiceIndex as number) : null,
       simMode: settings.simMode,
       timerEnabled: settings.timerEnabled,
       secondsTaken: Math.max(0, Math.round(Number(secondsTaken) || 0)),

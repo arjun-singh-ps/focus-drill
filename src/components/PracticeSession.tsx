@@ -323,6 +323,13 @@ function Header({
         >
           Progress
         </Link>
+        <Link
+          href="/review"
+          className="text-sm underline underline-offset-4"
+          style={{ color: "var(--ink-mid)" }}
+        >
+          Revision
+        </Link>
         <button
           type="button"
           onClick={onToggleSettings}

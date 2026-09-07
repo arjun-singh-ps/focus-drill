@@ -48,6 +48,9 @@ export default function ProgressDashboard({ data }: ProgressDashboardProps) {
           >
             Export CSV
           </a>
+          <Link href="/review" className="underline underline-offset-4" style={{ color: "var(--ink-mid)" }}>
+            Revision
+          </Link>
           <Link href="/" className="underline underline-offset-4" style={{ color: "var(--ink-mid)" }}>
             Practice
           </Link>

@@ -148,6 +148,8 @@ export interface AttemptInput {
   difficulty: Difficulty;
   wasCorrect: boolean;
   wasTimedOut: boolean;
+  /** Which of the four choices was picked. Null only when it timed out unanswered. */
+  chosenIndex: number | null;
   simMode: boolean;
   timerEnabled: boolean;
   secondsTaken: number;
@@ -176,6 +178,7 @@ export async function recordAttempt(input: AttemptInput): Promise<string> {
       difficulty: input.difficulty,
       was_correct: input.wasCorrect,
       was_timed_out: input.wasTimedOut,
+      chosen_index: input.chosenIndex,
       sim_mode: input.simMode,
       timer_enabled: input.timerEnabled,
       seconds_taken: input.secondsTaken,
